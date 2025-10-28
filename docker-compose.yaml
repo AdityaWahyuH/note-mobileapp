@@ -5,39 +5,23 @@ services:
       dockerfile: Dockerfile
     container_name: react-native-note-app
     ports:
+      - "19000:19000"
+      - "19001:19001"
+      - "19002:19002"
       - "8081:8081"
+    environment:
+      - NODE_ENV=development
+      - EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0
+      - CHOKIDAR_USEPOLLING=true
     volumes:
       - .:/app
       - /app/node_modules
-    environment:
-      - NODE_ENV=development
-      - CHOKIDAR_USEPOLLING=true
     networks:
       - app-network
+    stdin_open: true
+    tty: true
     restart: unless-stopped
-    command: npm start
-
-  # Backend API (jika menggunakan backend terpisah)
-  api:
-    image: node:16-alpine
-    container_name: notes-api
-    working_dir: /api
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./api:/api
-      - /api/node_modules
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-    networks:
-      - app-network
-    restart: unless-stopped
-    command: npm start
 
 networks:
   app-network:
     driver: bridge
-
-volumes:
-  node_modules:
