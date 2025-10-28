@@ -1,5 +1,5 @@
 # Base image dengan Node.js versi stabil
-FROM node:16-alpine as build
+FROM node:16-alpine AS build
 
 # Set environment variables
 ENV CI=true

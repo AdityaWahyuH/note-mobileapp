@@ -59,25 +59,23 @@ pipeline {
             }
         }
         
-        stage('Push to Registry') {
-            when {
-                branch 'main'
-            }
-            steps {
-                script {
-                    withCredentials([usernamePassword(
-                        credentialsId: "${REGISTRY_CREDENTIALS}",
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )]) {
-                        bat """
-                            echo %DOCKER_PASS% | docker login ${REGISTRY} -u %DOCKER_USER% --password-stdin
-                            docker push ${IMAGE_NAME}:latest
-                        """
-                    }
-                }
+       stage('Push to Registry') {
+    steps {
+        script {
+            withCredentials([usernamePassword(
+                credentialsId: "${REGISTRY_CREDENTIALS}",
+                usernameVariable: 'DOCKER_USER',
+                passwordVariable: 'DOCKER_PASS'
+            )]) {
+                bat """
+                    echo %DOCKER_PASS% | docker login ${REGISTRY} -u %DOCKER_USER% --password-stdin
+                    docker push ${IMAGE_NAME}:latest
+                """
             }
         }
+    }
+}
+
         
         stage('Deploy') {
             when {
