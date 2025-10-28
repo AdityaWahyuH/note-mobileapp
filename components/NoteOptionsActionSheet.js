@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Pressable, ToastAndroid, Alert, Share } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, Pressable, ToastAndroid, Alert, Share, Platform } from 'react-native'
 import React, { useState } from 'react'
 import ActionSheet, { SheetManager } from "react-native-actions-sheet";
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -7,11 +7,10 @@ import * as Clipboard from 'expo-clipboard';
 import { useNavigation } from '@react-navigation/native';
 import { useGlobalContext } from '../context/context';
 import NoteReminderModal from './NoteReminderModal';
-import { addMessage } from '@ouroboros/react-native-snackbar';
 
 const NoteOptionsActionSheet = ({ noteId, formData }) => {
   const navigation = useNavigation();
-  const { notes, setNotes } = useGlobalContext();
+  const { notes, setNotes, showSnackbar } = useGlobalContext();
   const [noteReminderModal, setNoteReminderModal] = useState(false);
 
   const note = notes.find(note => note.id === noteId);
@@ -34,7 +33,11 @@ const NoteOptionsActionSheet = ({ noteId, formData }) => {
 
   const copyToClipboard = async () => {
     await Clipboard.setStringAsync(formData.text);
-    ToastAndroid.show("Note's text copied", ToastAndroid.SHORT);
+    if (Platform.OS === 'android') {
+      ToastAndroid.show("Note's text copied", ToastAndroid.SHORT);
+    } else {
+      showSnackbar("Note's text copied");
+    }
   }
 
   const shareNote = async () => {
@@ -45,18 +48,18 @@ const NoteOptionsActionSheet = ({ noteId, formData }) => {
     try {
       const trashNotes = await getData("trashNotes");
       const note = trashNotes.find(note => note.id === noteId);
-      const newNotesArr = [...notes];
+      const newNotesArr = [...notes, note];
       await storeData("notes", newNotesArr);
 
       const newTrashNotesArr = trashNotes.filter(trashNote => trashNote.id !== note.id);
       await storeData("trashNotes", newTrashNotesArr);
       setNotes(newNotesArr);
+      showSnackbar("Note restored");
     }
     catch (err) {
       Alert.alert("Error", "Some error is there!!");
     }
   }
-
 
   const moveNoteToTrash = async () => {
     try {
@@ -69,21 +72,16 @@ const NoteOptionsActionSheet = ({ noteId, formData }) => {
       navigation.navigate("Home");
       setNotes(newNotesArr);
 
-      addMessage({
-        text: "Note moved to trash",
-        duration: 5000,
-        action: {
-          text: "Undo",
-          onPress: restoreNote
-        }
-      });
-
+      // Menggunakan showSnackbar dari context
+      showSnackbar("Note moved to trash");
+      
+      // Note: Undo functionality perlu diimplementasikan dengan cara berbeda
+      // karena react-native-paper Snackbar sudah punya action button
     }
     catch (err) {
       Alert.alert("Error", "Some error is there!!");
     }
   }
-
 
   const cloneNote = async () => {
     try {
@@ -98,7 +96,12 @@ const NoteOptionsActionSheet = ({ noteId, formData }) => {
       await storeData("notes", newNotesArr);
       setNotes(newNotesArr);
       navigation.navigate("Home");
-      ToastAndroid.show("Note cloned successfully", ToastAndroid.SHORT);
+      
+      if (Platform.OS === 'android') {
+        ToastAndroid.show("Note cloned successfully", ToastAndroid.SHORT);
+      } else {
+        showSnackbar("Note cloned successfully");
+      }
     }
     catch (err) {
       Alert.alert("Error", "Some error is there!!");
@@ -123,8 +126,6 @@ const NoteOptionsActionSheet = ({ noteId, formData }) => {
     SheetManager.hide("noteOptionsActionSheet");
     setNoteReminderModal(true);
   }
-
-
 
   return (
     <>
