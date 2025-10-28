@@ -10,7 +10,6 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                // Kode akan otomatis di-checkout dari SCM yang dikonfigurasi di Jenkins
                 checkout scm
             }
         }
@@ -59,32 +58,19 @@ pipeline {
             }
         }
         
-       stage('Push to Registry') {
-    steps {
-        script {
-            withCredentials([usernamePassword(
-                credentialsId: "${REGISTRY_CREDENTIALS}",
-                usernameVariable: 'DOCKER_USER',
-                passwordVariable: 'DOCKER_PASS'
-            )]) {
-                bat """
-                    echo %DOCKER_PASS% | docker login ${REGISTRY} -u %DOCKER_USER% --password-stdin
-                    docker push ${IMAGE_NAME}:latest
-                """
-            }
-        }
-    }
-}
-
-        
-        stage('Deploy') {
+        stage('Push to Registry') {
             steps {
                 script {
-                    echo "Deploying application..."
-                    bat '''
-                        docker-compose down
-                        docker-compose up
-                    '''
+                    withCredentials([usernamePassword(
+                        credentialsId: "${REGISTRY_CREDENTIALS}",
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
+                        bat """
+                            echo %DOCKER_PASS% | docker login ${REGISTRY} -u %DOCKER_USER% --password-stdin
+                            docker push ${IMAGE_NAME}:latest
+                        """
+                    }
                 }
             }
         }
@@ -93,6 +79,8 @@ pipeline {
     post {
         success {
             echo 'Pipeline executed successfully!'
+            echo 'Image pushed to Docker Hub: ${IMAGE_NAME}:latest'
+            echo 'To deploy, run: docker-compose up -d'
             bat 'echo Build completed at %date% %time%'
         }
         failure {
